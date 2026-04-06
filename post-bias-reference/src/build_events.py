@@ -2,9 +2,9 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-project_root = Path(__file__).resolve().parent.parent
+project_root = Path(__file__).resolve().parent.parent.parent
 raw_path = project_root / "data" / "raw" / "spy_2m.csv"
-processed_dir = project_root / "data" / "processed"
+processed_dir = project_root / "post-bias-reference" / "data" / "processed"
 processed_dir.mkdir(parents=True, exist_ok=True)
 
 df = pd.read_csv(raw_path)
@@ -19,15 +19,13 @@ for col in numeric_cols:
 df = df.sort_values("Datetime").reset_index(drop=True)
 
 k = 3
-m = 30
+m = 15
 z = 2
 cooldown = 10
 
-h0 = 10
-hmax = 200
-alpha = 2
-beta = 5
-min_init_move = 0.00015
+h0 = 1
+hmax = 30
+alpha = 0.5
 
 df["ret_1"] = df["Close"].pct_change()
 df["ret_k"] = df["Close"].pct_change(k)
@@ -86,8 +84,18 @@ event_idx = np.flatnonzero(selected)
 close = df["Close"].to_numpy()
 rows = []
 
+terminal_counts = {
+    "dropped_near_end": 0,
+    "hit_before_h0": 0,
+    "no_established_bias": 0,
+    "continuation_first": 0,
+    "reversal_first": 0,
+    "not_resolved_within_hmax": 0,
+}
+
 for i in event_idx:
     if i + hmax >= len(df):
+        terminal_counts["dropped_near_end"] += 1
         continue
 
     event_move = df.loc[i, "ret_k"]
@@ -102,8 +110,9 @@ for i in event_idx:
 
     hit_before_h0 = False
     for j in range(1, h0 + 1):
-        move_abs = abs(close[i + j] / event_price - 1)
-        if move_abs >= target_move:
+        raw_move = close[i + j] / event_price - 1
+        if abs(raw_move) >= target_move:
+            terminal_counts["hit_before_h0"] += 1
             hit_before_h0 = True
             break
 
@@ -111,45 +120,50 @@ for i in event_idx:
         continue
 
     init_post_move = close[i + h0] / event_price - 1
-
-    if abs(init_post_move) < min_init_move:
-        continue
-
     post_sign = int(np.sign(init_post_move))
 
-    running_best = 0.0
-    max_drawdown_frac = 0.0
+    if post_sign == 0:
+        terminal_counts["no_established_bias"] += 1
+        continue
+
     resolved = False
     hit_bar = np.nan
     hit_move = np.nan
+    label_continuation = np.nan
 
     for j in range(h0 + 1, hmax + 1):
-        move_from_event = post_sign * (close[i + j] / event_price - 1)
+        raw_move = close[i + j] / event_price - 1
 
-        if move_from_event > running_best:
-            running_best = move_from_event
+        upper_hit = raw_move >= target_move
+        lower_hit = raw_move <= -target_move
 
-        if running_best > 0:
-            drawdown_frac = (running_best - move_from_event) / running_best
+        if not upper_hit and not lower_hit:
+            continue
+
+        hit_bar = j
+        hit_move = raw_move
+        resolved = True
+
+        if post_sign > 0:
+            if upper_hit:
+                label_continuation = 1
+                terminal_counts["continuation_first"] += 1
+            else:
+                label_continuation = 0
+                terminal_counts["reversal_first"] += 1
         else:
-            drawdown_frac = 0.0
+            if lower_hit:
+                label_continuation = 1
+                terminal_counts["continuation_first"] += 1
+            else:
+                label_continuation = 0
+                terminal_counts["reversal_first"] += 1
 
-        if drawdown_frac > max_drawdown_frac:
-            max_drawdown_frac = drawdown_frac
-
-        if drawdown_frac > beta:
-            break
-
-        if move_from_event >= target_move:
-            resolved = True
-            hit_bar = j
-            hit_move = move_from_event
-            break
+        break
 
     if not resolved:
+        terminal_counts["not_resolved_within_hmax"] += 1
         continue
-
-    label_continuation = int(post_sign == event_sign)
 
     rows.append({
         "Datetime": df.loc[i, "Datetime"],
@@ -173,8 +187,7 @@ for i in event_idx:
         "target_move": target_move,
         "hit_bar": hit_bar,
         "hit_move": hit_move,
-        "max_drawdown_frac": max_drawdown_frac,
-        "label_continuation": label_continuation,
+        "label_continuation": int(label_continuation),
         "ret_2": df.loc[i, "ret_2"],
         "ret_3": df.loc[i, "ret_3"],
         "ret_1_lag1": df.loc[i, "ret_1_lag1"],
@@ -194,84 +207,20 @@ for i in event_idx:
         "vol_mean_3_rel": df.loc[i, "vol_mean_3_rel"],
     })
 
-events = pd.DataFrame(rows)
-events = events.dropna().reset_index(drop=True)
-
-events.to_csv(processed_dir / "spy_event_dataset.csv", index=False)
-
-print(events.shape)
-print(events["label_continuation"].value_counts())
-print(events.head())
-
-terminal_counts = {
-    "hit_before_h0": 0,
-    "no_established_bias": 0,
-    "resolved": 0,
-    "not_resolved_within_hmax": 0,
-    "hit_max_drawdown": 0,
-    "dropped_near_end": 0,
-}
-
-for i in event_idx:
-    if i + hmax >= len(df):
-        terminal_counts["dropped_near_end"] += 1
-        continue
-
-    event_move = df.loc[i, "ret_k"]
-    event_size = abs(event_move)
-    event_sign = int(np.sign(event_move))
-
-    if event_sign == 0:
-        continue
-
-    event_price = close[i]
-    target_move = alpha * event_size
-
-    hit_early = False
-    for j in range(1, h0 + 1):
-        move_abs = abs(close[i + j] / event_price - 1)
-        if move_abs >= target_move:
-            terminal_counts["hit_before_h0"] += 1
-            hit_early = True
-            break
-
-    if hit_early:
-        continue
-
-    init_post_move = close[i + h0] / event_price - 1
-
-    if abs(init_post_move) < min_init_move:
-        terminal_counts["no_established_bias"] += 1
-        continue
-
-    post_sign = int(np.sign(init_post_move))
-    running_best = 0.0
-    resolved = False
-    stopped_by_drawdown = False
-
-    for j in range(h0 + 1, hmax + 1):
-        move_from_event = post_sign * (close[i + j] / event_price - 1)
-
-        if move_from_event > running_best:
-            running_best = move_from_event
-
-        if running_best > 0:
-            drawdown_frac = (running_best - move_from_event) / running_best
-        else:
-            drawdown_frac = 0.0
-
-        if drawdown_frac > beta:
-            terminal_counts["hit_max_drawdown"] += 1
-            stopped_by_drawdown = True
-            break
-
-        if move_from_event >= target_move:
-            terminal_counts["resolved"] += 1
-            resolved = True
-            break
-
-    if (not resolved) and (not stopped_by_drawdown):
-        terminal_counts["not_resolved_within_hmax"] += 1
-
 print(terminal_counts)
 print("recognised events:", len(event_idx))
+
+events = pd.DataFrame(rows)
+
+if len(events) == 0:
+    print(events.shape)
+    print("no resolved events produced")
+    events.to_csv(processed_dir / "spy_event_dataset.csv", index=False)
+else:
+    events = events.dropna().reset_index(drop=True)
+    events.to_csv(processed_dir / "spy_event_dataset.csv", index=False)
+
+    print(events.shape)
+    print(events["label_continuation"].value_counts())
+    print("continuation rate:", events["label_continuation"].mean())
+    print(events.head())
