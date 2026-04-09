@@ -9,7 +9,7 @@ Two target constructions are compared under a fixed event-detection backbone and
 - **Method I:** continuation/reversal relative to the original event direction
 - **Method II:** continuation/reversal relative to the immediate post-event move
 
-The main result is that delayed reference construction induces a stronger continuation bias, but weaker conditional predictability from pre-event features.
+The main result is that delayed reference construction induces a strong unconditional structure which biases continuation. The delay causes the snapshot feature set's predictive relevance to degrade decreasing the presence of conditional structure. The result notwithstanding the temporal attenuation results in a substantially higher raw accuracy for the delayed label construction. 
 
 ## Project structure
 
