@@ -29,37 +29,39 @@
 	\newpage
 	
 	\section{Introduction}
-	
-	The object of interest in this paper is the short-horizon price response following an extreme intraday move. Conditional on the detection of such an event at time \(t\), the relevant question is whether the subsequent path is more likely to exhibit continuation or reversal. With \(X_t\) denoting a vector of pre-event features and \(Y_t \in \{0,1\}\) a continuation-versus-reversal label, the predictive problem is whether the conditional law
+
+	The object of interest in this paper is the short-horizon price response following an extreme intraday move. Conditional on the detection of such an event at time \(t\), the relevant question is whether the subsequent path is more likely to exhibit continuation or reversal. With \(X_t\) denoting a vector of pre-event features and \(Y_t \in \{0,1\}\) a continuation-versus-reversal label, the predictive problem is the conditional law
 	\[
 	\mathbb{P}(Y_t = y \mid X_t), \qquad y \in \{0,1\},
 	\]
-	depends nontrivially on \(X_t\).
-	
+	and how it depends on the temporal separation between \(X_t\) and \(Y_t\).
+
 	A central methodological complication is that \(Y_t\) is not primitive. Rather, it is induced by a rule imposed on the post-event path. Consequently, the learning problem is itself target-dependent. Even with the raw price process, the event-detection rule, and the pre-event feature set held fixed, a change in the label construction changes the effective sample
 	\[
 	\{(X_t,Y_t)\}_{t \in \mathcal{T}_{\mathrm{event}}},
 	\]
 	and thereby may alter the number of admissible events, the class proportions, the time-to-resolution distribution, and the measured out-of-sample performance.
-	
+
 	The paper studies this dependence under a common event-detection backbone. Two target constructions are compared. In Method I, continuation and reversal are defined relative to the direction of the extreme event itself. In Method II, the reference direction is defined only after a short post-event interval, so that the label is indexed to the immediate post-event move rather than to the original event direction. Thus, the comparison is not merely terminological; it isolates the effect of redefining the directional reference while leaving the detection rule and feature map unchanged.
-	
-	This distinction has two statistical consequences. First, the delayed reference used in Method II can induce a stronger marginal continuation bias by conditioning, albeit implicitly, on a short confirmation step. Second, that same delay introduces temporal separation between the feature vector \(X_t\) and the effective anchor of the label. Hence a target may become more directionally biased in an unconditional sense while becoming less predictable from pre-event information in a conditional sense. Put differently, a stronger base-rate asymmetry need not imply greater feature-based learnability.
-	
-	The empirical results are consistent with this interpretation. Relative to Method I, Method II produces a more asymmetric label distribution in favor of continuation, yet exhibits weaker evidence of conditional predictability from the common pre-event feature set. Method I, by contrast, displays a weaker marginal continuation tendency but stronger discrimination beyond the corresponding majority baseline. This suggests a bias--learnability tradeoff: waiting to confirm direction may strengthen unconditional directional structure while attenuating the relevance of information available at the event time.
-	
-	The contribution of the paper is therefore comparative rather than prescriptive. The aim is not to assert a robust tradable signal, but to show that under a fixed event-detection architecture and a common pre-event feature set, the apparent predictability of continuation versus reversal is materially sensitive to target construction. In particular, redefining the reference direction changes not only the semantics of the label, but also its marginal distribution and its conditional relation to \(X_t\).
+
+	This distinction has two statistical consequences. First, the delayed reference used in Method II induces a stronger marginal continuation bias by conditioning, albeit implicitly, on a short confirmation step. Second, that same delay deliberately introduces temporal separation between the feature vector \(X_t\) and the effective anchor of the label. The feature set is held fixed precisely in order to isolate this effect. Under this design, any increase in raw predictive accuracy produced by Method II cannot be attributed to additional information extracted during the delay interval, but must instead arise from the change in the target induced by delaying the anchor itself.
+
+	The empirical results are consistent with this interpretation. Relative to Method I, Method II produces a more asymmetric label distribution in favor of continuation, yet exhibits weaker evidence of conditional predictability from the common pre-event feature set. Method I, by contrast, displays a weaker marginal continuation tendency but stronger discrimination beyond the corresponding majority baseline. The resulting bias--learnability tradeoff is therefore not an accidental byproduct of the specification, but the central object of study: waiting briefly to define the reference direction strengthens unconditional directional structure, and this increase in marginal asymmetry is powerful enough to raise raw accuracy even when the common feature set provides only weak conditional discrimination.
+
+	The contribution of the paper is therefore comparative rather than prescriptive. The aim is not to assert a robust tradable signal, but to show that under a fixed event-detection architecture and a common pre-event feature set, the apparent predictability of continuation versus reversal is materially sensitive to target construction---in particular, to how temporal anchoring changes both the marginal distribution of the label and its conditional relation to \(X_t\).
+
+
 	
 	\section{Data and Event Construction}
-	
+
 	\subsection{Data Source and Sampling Frequency}
-	
+
 	Let \(S_t\) denote the SPY price observed on a \(2\)-minute grid. The empirical analysis uses intraday SPY data downloaded from \texttt{yfinance}. Since Yahoo Finance provides only a limited recent history for \(2\)-minute bars, the available sample is restricted to approximately the most recent \(60\) calendar days. The study should therefore be interpreted as a short-sample exploratory analysis rather than a large-sample estimate of a stable market effect.
-	
+
 	The design is event-driven rather than bar-driven. Thus the basic statistical unit is not an arbitrary \(2\)-minute bar, but an identified extreme-move event. Only such event times enter the final dataset.
-	
+
 	\subsection{Feature Construction}
-	
+
 	For each time \(t\), define the one-bar return
 	\[
 	r_t^{(1)} = \frac{S_t}{S_{t-1}} - 1
@@ -69,21 +71,21 @@
 	r_t^{(k)} = \frac{S_t}{S_{t-k}} - 1.
 	\]
 	These quantities are used to construct both the event-detection rule and the pre-event feature vector.
-	
-	The feature set is restricted to information available at or before the event time \(t\). This is particularly important for Method II, in which the label reference direction is determined only after the short interval \([t,t+h_0]\). It includes return-based, volatility-based, volume-based, and candlestick-style features, such as
+
+	The feature set is deliberately restricted to information available at or before the event time \(t\). This restriction is central to the comparison: in Method II, the label reference direction is defined only after the short interval \([t,t+h_0]\), yet the predictor set is intentionally held fixed at the event time in order to isolate the statistical effect of delaying the anchor of the label itself. The feature set includes return-based, volatility-based, volume-based, and candlestick-style features, such as
 	\[
 	r_t^{(k)},\quad \sigma_t^{(k)},\quad z_t,\quad \text{volume ratios},\quad \text{short-lag returns},\quad \text{rolling return moments},
 	\]
 	together with measures of intrabar shape and time-from-open. No post-event variables are used as model inputs.
-	
+
 	Formally, each retained event contributes an observation of the form
 	\[
 	(X_t,Y_t),\qquad t \in \mathcal{T}_{\mathrm{event}},
 	\]
 	where \(X_t\) is the pre-event feature vector and \(Y_t \in \{0,1\}\) is assigned by one of the target-construction rules described in the next section.
-	
+
 	\subsection{Shared Event-Detection Rule}
-	
+
 	The event-detection backbone is identical across both methods. First compute the \(k\)-bar return
 	\[
 	r_t^{(k)} = \frac{S_t}{S_{t-k}} - 1.
@@ -100,25 +102,25 @@
 	\[
 	z_t \ge z.
 	\]
-	
+
 	In the empirical implementation, the common event-detection parameters are
 	\[
 	k=3,\qquad m=15,\qquad z=2.
 	\]
 	Hence an event corresponds to a sufficiently large \(3\)-bar return relative to a local \(15\)-bar volatility scale.
-	
+
 	\subsection{Cooldown Rule and Event Set}
-	
+
 	To avoid dense clusters of highly overlapping detections, a cooldown rule is imposed. If an event is recorded at time \(t\), then any further candidate events within the next prescribed number of bars are ignored. This ensures that the final sample consists of separated extreme-move episodes rather than multiple near-duplicate detections from the same local burst of volatility.
-	
+
 	Let \(\mathcal{T}_{\mathrm{event}}\) denote the retained event times after this filtering step. In the empirical implementation, the cooldown parameter is
 	\[
 	\text{cooldown}=10.
 	\]
 	Thus at least \(10\) bars must separate consecutive retained events.
-	
+
 	\subsection{Post-Event Horizon and Sample Retention}
-	
+
 	Conditional on an event at time \(t\), the post-event path is examined over a finite horizon
 	\[
 	j = 1,\ldots,h_{\max}.
@@ -128,8 +130,8 @@
 	h_0 = 1, \qquad h_{\max} = 30,
 	\]
 	where \(h_0\) is the short post-event reference interval used in Method II, and \(h_{\max}\) is the maximum number of bars over which the event is allowed to resolve.
-	
-	The role of \(h_0\) is conceptually important. In Method I, the reference direction is fixed at the event time \(t\), so the target is anchored directly to the detected extreme move. In Method II, the reference direction is fixed only after the interval \([t,t+h_0]\). Thus Method II introduces a short temporal gap between the pre-event feature vector \(X_t\) and the effective reference point used to define the label. This distinction is central to the later comparison.
+
+	The role of \(h_0\) is conceptually important. In Method I, the reference direction is fixed at the event time \(t\), so the target is anchored directly to the detected extreme move. In Method II, the reference direction is fixed only after the interval \([t,t+h_0]\). Thus Method II intentionally introduces a short temporal gap between the pre-event feature vector \(X_t\) and the effective reference point used to define the label. Because the predictor set is not extended into this interval, the comparison cleanly isolates the extent to which delayed anchoring alone changes the marginal structure of the target and the resulting headline predictive metrics.
 	
 	\section{Label Definitions}
 	
@@ -929,71 +931,74 @@
 	\end{figure}
 	
 	\subsection{Conceptual Difference Between the Two Targets}
-	
+
 	The substantive difference between the two methods is not merely that they use different reference directions, but that Method II introduces a short confirmation step before the reference direction is fixed.
-	
+
 	In Method I, the label is defined relative to the direction of the extreme event itself. Hence the target asks whether the first barrier hit after time \(t\) lies in the same direction as the original event or in the opposite direction.
-	
+
 	In Method II, the label is defined relative to the immediate post-event move over \([t,t+h_0]\). Thus the target asks whether the first barrier hit after \(h_0\) lies in the same direction as this short post-event move or in the opposite direction.
-	
-	This distinction has two consequences. First, the waiting step in Method II can induce a stronger marginal continuation bias, since the short delay acts as a confirmation step: the reference direction is fixed only after the move over \([t,t+h_0]\) has been observed. Continuation is therefore measured relative to a direction that has already been partially realized, which can mechanically increase the base-rate tendency toward continuation. Second, this same construction introduces temporal separation between the pre-event feature vector \(X_t\) and the effective reference point of the label. In Method I, the label is anchored directly to the event at time \(t\); in Method II, it is anchored only after the short post-event interval. Consequently, Method II may exhibit stronger unconditional directional structure while at the same time being less predictable from pre-event features.
-	
+
+	This distinction has two consequences. First, the waiting step in Method II should induce a stronger marginal continuation bias, since the short delay acts as a confirmation step: the reference direction is fixed only after the move over \([t,t+h_0]\) has been observed. Continuation is therefore measured relative to a direction that has already been partially realized, which should mechanically increase the base-rate tendency toward continuation.
+
+	Second, this same construction deliberately introduces temporal separation between the pre-event feature vector \(X_t\) and the effective reference point of the label. The predictor set is nevertheless held fixed at the event time in order to isolate the effect of delayed anchoring itself. Under this design, any increase in raw predictive accuracy produced by Method II cannot be attributed to additional information extracted during the delay interval, but must instead arise from the change in the target induced by delaying the anchor of the label.
+
 	Formally, even with the raw data, event-detection rule, and feature map held fixed, changing the target rule changes the effective sample
 	\[
 	\{(X_t,Y_t)\}_{t \in \mathcal{T}_{\mathrm{event}}},
 	\]
-	and therefore may change the sample size, the class balance, the time-to-resolution distribution, and the measured out-of-sample performance.
-	
-	The comparison is therefore best interpreted as a study of how target construction affects the bias--predictability tradeoff. Method I uses an immediately anchored target with weaker marginal asymmetry but greater scope for conditional prediction from \(X_t\). Method II uses a short delayed reference that strengthens the base-rate tendency toward continuation, but appears to attenuate the predictive relevance of the common pre-event feature set.
+	and therefore likely changes the sample size, the class balance, the time-to-resolution distribution, and the measured out-of-sample performance.
+
+	The comparison is therefore best interpreted as a study of how delayed target construction affects the relation between marginal directional structure and conditional predictability. Method I uses an immediately anchored target with weaker marginal asymmetry but stronger evidence of conditional discrimination from the common pre-event feature set. Method II uses a short delayed reference that strengthens the base-rate tendency toward continuation, and the controlled comparison is designed to show how potent that delay-induced marginal structure can be in raising raw accuracy even when no additional predictive information is supplied during the delay interval.
+
 	
 	\section{Feature Set and Modeling Setup}
-	
+
 	\subsection{Pre-Event Feature Construction}
-	
+
 	For each retained event time \(t \in \mathcal{T}_{\mathrm{event}}\), the model input is a feature vector
 	\[
 	X_t \in \mathbb{R}^p
 	\]
-	constructed exclusively from information available at or before time \(t\). Hence the empirical design avoids forward-looking features by construction. The feature set includes four broad groups.
-	
+	constructed exclusively from information available at or before time \(t\). Thus the empirical design excludes forward-looking information by construction. This restriction is deliberate: when the label is moved forward in time, the predictor set is intentionally held fixed in order to isolate the statistical effect of delayed anchoring itself rather than allowing additional conditional structure to enter through an extended feature set. The feature set includes four broad groups.
+
 	First, return- and volatility-based quantities:
 	\[
 	r_t^{(k)},\quad \sigma_t^{(m)},\quad z_t,\quad r_t^{(2)},\quad r_t^{(3)},\quad r_{t-1}^{(1)},\quad r_{t-2}^{(1)},\quad r_{t-3}^{(1)},
 	\]
- 	together with short rolling summaries such as
+	together with short rolling summaries such as
 	\[
 	\overline r_{t,3}^{(1)},\qquad \operatorname{sd}_{t,3}\!\left(r^{(1)}\right),\qquad \max_{j=0,1,2} r_{t-j}^{(1)},\qquad \min_{j=0,1,2} r_{t-j}^{(1)}.
 	\]
-	
+
 	Second, volume- and activity-based quantities:
 	\[
 	\text{vol\_k\_rel},\qquad \text{vol\_1\_rel},\qquad \text{vol\_mean\_3\_rel},\qquad \text{vol\_regime}.
 	\]
-	
+
 	Third, range- and candlestick-style quantities:
 	\[
 	\text{range\_k},\qquad \text{body},\qquad \text{bar\_range},\qquad \text{upper\_wick},\qquad \text{lower\_wick}.
 	\]
-	
+
 	Fourth, short-horizon directional-composition and timing variables:
 	\[
 	\text{up\_frac\_3},\qquad \text{down\_frac\_3},\qquad \text{prev\_ret\_k},\qquad \text{mins\_from\_open}.
 	\]
-	
+
 	The exact feature list used in the baseline model is:
 	\[
 	\begin{aligned}
-		\{&\texttt{ret\_k},\texttt{sigma\_k},\texttt{event\_zscore},\texttt{event\_size},\texttt{vol\_k\_rel},\texttt{range\_k},\texttt{vol\_regime},\texttt{prev\_ret\_k},\\
-		&\texttt{mins\_from\_open},\texttt{ret\_2},\texttt{ret\_3},\texttt{ret\_1\_lag1},\texttt{ret\_1\_lag2},\texttt{ret\_1\_lag3},\texttt{ret\_1\_mean\_3},\\
-		&\texttt{ret\_1\_std\_3},\texttt{up\_frac\_3},\texttt{down\_frac\_3},\texttt{max\_ret\_1\_3},\texttt{min\_ret\_1\_3},\texttt{body},\texttt{bar\_range},\\
-		&\texttt{upper\_wick},\texttt{lower\_wick},\texttt{vol\_1\_rel},\texttt{vol\_mean\_3\_rel}\}.
+	\{&\texttt{ret\_k},\texttt{sigma\_k},\texttt{event\_zscore},\texttt{event\_size},\texttt{vol\_k\_rel},\texttt{range\_k},\texttt{vol\_regime},\texttt{prev\_ret\_k},\\
+	&\texttt{mins\_from\_open},\texttt{ret\_2},\texttt{ret\_3},\texttt{ret\_1\_lag1},\texttt{ret\_1\_lag2},\texttt{ret\_1\_lag3},\texttt{ret\_1\_mean\_3},\\
+	&\texttt{ret\_1\_std\_3},\texttt{up\_frac\_3},\texttt{down\_frac\_3},\texttt{max\_ret\_1\_3},\texttt{min\_ret\_1\_3},\texttt{body},\texttt{bar\_range},\\
+	&\texttt{upper\_wick},\texttt{lower\_wick},\texttt{vol\_1\_rel},\texttt{vol\_mean\_3\_rel}\}.
 	\end{aligned}
 	\]
-	
+
 	No post-event quantities used in the target construction are included as predictors. In particular, variables such as the post-event sign, hit time, hit move, or other path-dependent outcome quantities are excluded from \(X_t\).
-	
+
 	\subsection{Train-Test Split and Baseline Model}
-	
+
 	Let
 	\[
 	\{(X_t,Y_t)\}_{t=1}^{N}
@@ -1006,25 +1011,25 @@
 	\{\lfloor 0.7N \rfloor +1,\dots,N\}
 	\quad \text{for testing.}
 	\]
-	
+
 	The baseline classifier is logistic regression applied after feature standardization. Thus the fitted model is
 	\[
-	\mathbb{P}(Y_t=1\mid X_t)
+	\widehat{\mathbb{P}}(Y_t=1\mid X_t)
 	=
 	\frac{1}{1+\exp\!\left(-(\beta_0+\beta^\top \widetilde X_t)\right)},
 	\]
 	where \(\widetilde X_t\) denotes the standardized feature vector. In implementation terms, the estimation pipeline is 
 	\[
-	X_t \xrightarrow{\text{StandardScaler}} \widetilde X_t \xrightarrow{\text{LogisticRegression}} \widehat Y_t
+	X_t \xrightarrow{\text{StandardScaler}} \widetilde X_t \xrightarrow{\text{LogisticRegression}} \widehat Y_t.
 	\]
-	
+	The standardized feature is given by
 	\[
-	\widetilde X_{t,j}=\frac{X_{t,j}-\mu_j}{s_j}
+	\widetilde X_{t,j}=\frac{X_{t,j}-\mu_j}{s_j},
 	\]
-	where \(\mu_j\) and \({s_j}\) are computed from the training set, and then logistic regression is fit using \(\widetilde X_{t,j}\).
-	
+	where \(\mu_j\) and \(s_j\) are computed from the training set, and logistic regression is then fit using \(\widetilde X_{t,j}\).
+
 	This baseline was chosen deliberately. The purpose is not to maximize predictive performance, but to provide a transparent linear benchmark against which the sensitivity of the target construction can be evaluated.
-	
+
 	As a trivial comparator, a majority-class baseline is also reported. Let
 	\[
 	\widehat y_{\mathrm{base}}
@@ -1032,11 +1037,11 @@
 	\operatorname{mode}\{Y_t : t \in \text{training set}\}.
 	\]
 	The baseline classifier then predicts this same class for every observation in the test set.
-	
+
 	\subsection{Evaluation Metrics}
-	
+
 	Model performance is evaluated on the test block using accuracy, the majority-class baseline, the confusion matrix, the classification report, and ROC-AUC.
-	
+
 	The test accuracy is
 	\[
 	\operatorname{Acc}
@@ -1053,18 +1058,18 @@
 	\frac{1}{N_{\mathrm{test}}}\sum_{t\in\mathcal{T}_{\mathrm{test}}}\mathbf{1}\{Y_t=0\},
 	\;
 	\frac{1}{N_{\mathrm{test}}}\sum_{t\in\mathcal{T}_{\mathrm{test}}}\mathbf{1}\{Y_t=1\}
-	\right\},
+	\right\}.
 	\]
-	
-	This comparator is substantively important in the present setting. A target construction may induce strong class imbalance and therefore high unconditional predictability in the trivial sense that one class occurs much more often than the other. Outperforming the majority baseline is therefore interpreted as evidence of conditional predictive structure beyond the marginal class distribution.
-	
+
+	This comparator is substantively important in the present setting. Target construction may induce strong class imbalance and therefore high unconditional predictability in the trivial sense that one class occurs much more often than the other. Underperforming the majority baseline is therefore interpreted as evidence that the fitted model fails to extract useful conditional predictive structure beyond the marginal class distribution in that specification.
+
 	To describe the composition of correct and incorrect predictions, the confusion matrix is reported:
 	\[
 	C
 	=
 	\begin{pmatrix}
-		C_{00} & C_{01}\\
-		C_{10} & C_{11}
+	C_{00} & C_{01}\\
+	C_{10} & C_{11}
 	\end{pmatrix},
 	\qquad
 	C_{ij}
@@ -1079,7 +1084,7 @@
 	C_{11}=\text{true positives}.
 	\]
 	The confusion matrix is useful because two models with similar accuracy may behave very differently across the two classes. In particular, under class imbalance, a classifier may achieve high raw accuracy simply by overpredicting the majority class.
-	
+
 	The classification report summarizes precision, recall, and \(F_1\)-score. For class \(1\),
 	\[
 	\operatorname{Precision}_1
@@ -1098,10 +1103,10 @@
 	{\operatorname{Precision}_1+\operatorname{Recall}_1}.
 	\]
 	Analogous definitions apply to class \(0\).
-	
+
 	Let
 	\[
-	\widehat p_t = \mathbb{P}(Y_t=1\mid X_t)
+	\widehat p_t = \widehat{\mathbb{P}}(Y_t=1\mid X_t)
 	\]
 	denote the fitted logistic probability. ROC-AUC is computed from the receiver operating characteristic curve obtained by varying the classification threshold \(c \in [0,1]\). For each threshold \(c\), define
 	\[
@@ -1129,10 +1134,10 @@
 	\[
 	\operatorname{AUC}
 	=
-	\int_0^1 \operatorname{TPR}(u)\,d u,
+	\int_0^1 \operatorname{TPR}(u)\,du,
 	\]
 	where \(u\) denotes the false positive rate parametrizing the curve.
-	
+
 	Equivalently, ROC-AUC admits the probabilistic interpretation
 	\[
 	\operatorname{AUC}
@@ -1140,7 +1145,7 @@
 	\mathbb{P}\!\left(\widehat p_i > \widehat p_j \mid Y_i=1,\ Y_j=0\right),
 	\]
 	up to ties. Hence ROC-AUC measures ranking quality: it is the probability that a randomly chosen positive observation receives a higher model score than a randomly chosen negative observation.
-	
+
 	This metric is particularly useful here because a model may achieve moderate accuracy simply by tracking the dominant class, whereas ROC-AUC evaluates whether the fitted probabilities actually separate continuation from reversal. In particular,
 	\[
 	\operatorname{AUC}\approx 0.5
@@ -1152,11 +1157,11 @@
 	indicates that the model contains some ranking information beyond chance.
 	
 	\section{Empirical Results}
-	
+
 	\subsection{Dataset Size and Marginal Label Distribution}
-	
+
 	Under the common event-detection backbone and the common pre-event feature set, the two target constructions produce materially different event-level datasets.
-	
+
 	For Method I (event-direction reference), the final labelled sample contains
 	\[
 	N = 201
@@ -1166,7 +1171,7 @@
 	\widehat{\mathbb{P}}(Y=1)=0.478.
 	\]
 	Thus the induced target is close to balanced.
-	
+
 	For Method II (post-event / next-bar reference), the final labelled sample contains
 	\[
 	N = 165
@@ -1176,18 +1181,18 @@
 	\widehat{\mathbb{P}}(Y=1)=0.703.
 	\]
 	Hence the delayed reference construction induces a substantially stronger skew toward continuation.
-	
-	This difference is itself substantive. The short waiting step in Method II fixes the reference direction only after the move over \([t,t+h_0]\) has been observed. As a result, continuation is measured relative to a direction that has already been partially realized, which mechanically increases the marginal tendency toward continuation. Thus the first effect of target construction is distributional:
+
+	This difference is itself substantive. The short waiting step in Method II fixes the reference direction only after the move over \([t,t+h_0]\) has been observed. As a result, continuation is measured relative to a direction that has already been partially realized, which mechanically increases the marginal tendency toward continuation. Thus the central effect of target construction is distributional:
 	\[
 	\text{Method I} \;\Rightarrow\; \text{near-balanced labels},
 	\qquad
 	\text{Method II} \;\Rightarrow\; \text{continuation-dominated labels}.
 	\]
-	
+
 	\subsection{Out-of-Sample Predictive Performance}
-	
+
 	The out-of-sample results differ sharply across the two specifications.
-	
+
 	For Method I, the chronological test-set accuracy is
 	\[
 	\mathrm{Acc}=0.623,
@@ -1201,7 +1206,7 @@
 	\mathrm{AUC}=0.591.
 	\]
 	Thus Method I exhibits modest but nontrivial predictive discrimination beyond the marginal class distribution.
-	
+
 	For Method II, the test-set accuracy is
 	\[
 	\mathrm{Acc}=0.720,
@@ -1215,94 +1220,89 @@
 	\mathrm{AUC}=0.471,
 	\]
 	which lies below random ranking. Hence the apparent raw accuracy of Method II is driven primarily by the strong continuation skew in the target rather than by useful conditional prediction from \(X_t\).
-	
-	Accordingly, the main empirical contrast is not that one specification attains higher headline accuracy than the other, but that they differ in the relation between marginal bias and conditional learnability:
-	\[
-	\text{Method I: weaker marginal bias, stronger conditional predictability;}
-	\]
-	\[
-	\text{Method II: stronger marginal bias, weaker conditional predictability.}
-	\]
-	
+
+	Accordingly, the empirical contrast shows that delayed anchoring can materially raise raw accuracy even under a fixed pre-event feature set. Since the predictor set is deliberately held fixed across specifications, this increase is interpreted as evidence of the potency of the delay-induced marginal structure of the label rather than as evidence of improved conditional discrimination.
+
 	\subsection{Confusion-Matrix Comparison}
-	
+
 	The test-set confusion matrix for Method I is
 	\[
 	C^{(I)}=
 	\begin{pmatrix}
-		20 & 10\\
-		13 & 18
+	20 & 10\\
+	13 & 18
 	\end{pmatrix}.
 	\]
 	This matrix is reasonably balanced across the two classes. The classifier identifies both continuation and reversal with comparable success, which is consistent with the near-symmetric label distribution and the ROC-AUC above \(0.5\).
-	
+
 	For Method II, the confusion matrix is
 	\[
 	C^{(II)}=
 	\begin{pmatrix}
-		1 & 11\\
-		3 & 35
+	1 & 11\\
+	3 & 35
 	\end{pmatrix}.
 	\]
-	This matrix is highly asymmetric. In particular, the classifier correctly identifies only \(1\) out of \(12\) reversal events in the test set, while correctly classifying most continuation events. Thus the model is effectively overpredicting continuation, which explains why its raw accuracy remains moderate despite weak ranking quality.
-	
-	The confusion matrices therefore reinforce the same conclusion: Method II produces a target with stronger class asymmetry, but the fitted model does not extract useful class-specific discrimination beyond that asymmetry.
-	
+	This matrix is highly asymmetric. In particular, the classifier correctly identifies only \(1\) out of \(12\) reversal events in the test set, while correctly classifying most continuation events. Thus the model is effectively overpredicting continuation, which is why its raw accuracy remains relatively high despite weak ranking quality.
+
+	The confusion matrices therefore reinforce the same conclusion: Method II's asymmetrical label distribution has a material effect on raw accuracy despite little evidence of useful class-specific discrimination. In other words, the delayed target construction raises headline accuracy primarily through induced marginal structure rather than through stronger conditional predictability from the common feature set.
+
 	\subsection{Interpretation}
-	
-	Taken together, the results support the central claim of the paper: under a fixed event-detection rule and a fixed pre-event feature set, target construction materially changes both the marginal label distribution and the apparent learnability of the prediction problem.
-	
-	Method II induces a pronounced unconditional continuation tendency,
+
+	Taken together, the results support the central claim of the paper: under a fixed event-detection rule and a fixed pre-event feature set, target construction materially changes both the marginal label distribution and the apparent predictive behavior of the problem.
+
+	Method II induces a pronounced continuation tendency,
 	\[
 	\widehat{\mathbb{P}}(Y=1)\approx 0.70,
 	\]
-	which is economically and statistically meaningful at the level of the marginal distribution. However, this stronger directional bias does not translate into stronger conditional prediction from pre-event features. Rather, once the majority-class effect is taken into account, Method II exhibits weak discriminatory power.
-	
+	which is economically and statistically meaningful at the level of the marginal distribution. Importantly, this stronger directional bias does not translate into stronger conditional prediction from pre-event features. Rather, once the majority-class effect is taken into account, Method II exhibits weak discriminatory power while still producing relatively high raw accuracy. This is precisely the result that motivates the present comparison: delayed anchoring alone can induce a sufficiently strong asymmetry in the target to materially affect headline predictive metrics.
+
 	Method I behaves differently. Its target distribution is much closer to balanced, yet the logistic baseline outperforms the majority classifier and achieves ROC-AUC above \(0.5\). This suggests that the event-direction target retains at least modest conditional structure that is detectable from pre-event information.
-	
-	A natural interpretation is that Method II trades conditional learnability for directional confirmation. By waiting one bar before fixing the reference direction, it establishes a stronger base-rate tendency toward continuation, but at the same time introduces temporal displacement between the feature vector \(X_t\) and the effective anchor of the label. Even though this displacement is small, the results suggest that it is sufficient to attenuate the predictive relevance of the common pre-event feature set.
-	
-	The main conclusion is therefore comparative rather than prescriptive. The strongest finding is not a robust predictive edge, but that the apparent predictability of continuation versus reversal is highly sensitive to how the target is defined. In the present setting, delayed reference construction primarily alters the base rate, whereas immediate event-direction reference preserves more conditional predictability from \(X_t\).
-	
-	\section{Discussion}
-	
-	The empirical comparison indicates that target construction affects the problem along two distinct dimensions: the marginal distribution of the label and the extent of conditional predictability from the common pre-event feature set.
-	
-	The first effect is distributional. Method II produces a substantially higher continuation rate than Method I. This is not incidental. In Method II, the reference direction is fixed only after the short interval \([t,t+h_0]\) has been observed. The delay therefore acts as a confirmation step: continuation is measured relative to a direction that has already been partially realized. This mechanically induces a stronger marginal bias toward continuation. By contrast, Method I anchors the label directly to the original event direction, so the induced target remains much closer to balanced.
-	
-	The second effect concerns learnability. Although Method II exhibits stronger unconditional directional structure, the common pre-event feature set does not predict this target more effectively than the majority-class baseline. Its higher raw accuracy is therefore not evidence of stronger conditional structure, but is largely attributable to the continuation-dominated class distribution. Method I behaves differently. Its marginal label distribution is weaker and more symmetric, yet the logistic baseline outperforms the majority classifier and attains ROC-AUC above \(0.5\). This suggests that the event-direction target preserves at least modest conditional information that is detectable from \(X_t\).
-	
-	These results imply that unconditional bias and conditional predictability should be distinguished carefully. A target may display strong statistical regularity at the level of
-	\[
-	\mathbb{P}(Y=1),
-	\]
-	without being especially predictable from the feature vector through
-	\[
-	\mathbb{P}(Y=1 \mid X_t).
-	\]
-	That distinction is central in the present setting. Method II appears to strengthen the former while weakening the latter. Method I, despite its weaker base-rate asymmetry, retains greater evidence of feature-based discrimination.
-	
-	A natural interpretation is temporal attenuation. In Method I, the feature vector \(X_t\) and the label reference point coincide at the event time \(t\). In Method II, the effective reference point is shifted forward to the end of the interval \([t,t+h_0]\). Even though \(h_0=1\) in the present implementation, this small displacement appears sufficient to weaken the alignment between the feature snapshot and the eventual label. Put differently, the missing one-bar transition may contain information that is highly relevant for the delayed-reference target but unavailable to a model restricted to pre-event inputs. Under this interpretation, the deterioration in predictive performance under Method II is not merely a consequence of changed label semantics, but of reduced temporal alignment between predictors and target.
-	
-	This interpretation also helps explain why the two methods may invite different feature sets. The current predictors are constructed entirely from information available at or before the event time and are therefore naturally suited to characterizing the event itself: its magnitude, local volatility context, recent return dynamics, volume conditions, and bar shape. Such quantities may be more informative for predicting whether the original event direction persists than for predicting whether a one-bar-confirmed post-event direction persists. If so, Method II may require features more closely tied to very short-horizon post-event stabilization, directional persistence, or local microstructural adjustment. In that sense, the present results do not imply that Method II is intrinsically unpredictable, only that it is not well captured by the current pre-event feature map.
-	
-	The results should also be interpreted in light of the data limitations. The analysis uses approximately sixty calendar days of 2-minute SPY data from \texttt{yfinance}, so the sample is short and the conclusions are necessarily exploratory. The paper therefore does not claim a stable market effect or a deployable trading rule. Rather, the evidence supports a narrower conclusion: under a fixed event-detection architecture and a fixed pre-event feature set, small changes in target construction can materially alter both the base rate of the label and the apparent success of a predictive model.
-	
-	From a modeling perspective, this is the main lesson. In short-horizon event-driven classification, the label is not a passive object extracted from the data, but an active design choice that helps determine what statistical structure is visible to the model. The present comparison shows that delaying the reference direction by even one bar can strengthen marginal continuation bias while attenuating conditional learnability. A natural extension is therefore to study this tradeoff more systematically. In particular, future work could investigate whether there exists an intermediate target construction that better balances directional confirmation against temporal attenuation, rather than relying only on the two endpoint specifications considered here. With a larger sample and higher-resolution intraday data, one could vary the delay used to define the reference direction and examine whether predictive performance is maximized at some intermediate labeling rule between immediate event-direction anchoring and short delayed anchoring. Access to lower time frames would be especially valuable, since finer temporal granularity would permit a more precise analysis of how feature relevance decays as the label reference point moves away from the event time. Accordingly, target construction should be treated as a first-order modeling decision rather than as a secondary implementation detail.
+
+	A natural interpretation is that Method II trades conditional learnability for directional confirmation. By waiting one bar before fixing the reference direction, it establishes a stronger base-rate tendency toward continuation and simultaneously introduces temporal displacement between the feature vector \(X_t\) and the effective anchor of the label. Even though this displacement is small, the results suggest that it is sufficient to attenuate the predictive relevance of the common pre-event feature set when that set is deliberately held fixed.
+
+	The main conclusion is therefore that the apparent predictability of continuation versus reversal is highly sensitive to how the target is defined. In the present setting, delayed reference construction primarily alters the base rate, and this change in marginal structure has a notable effect on raw accuracy, whereas immediate event-direction reference preserves more conditional predictability from \(X_t\).
+		
+		\section{Discussion}
+
+		The empirical comparison indicates that target construction affects the problem along two distinct dimensions: the marginal distribution of the label and the extent of conditional predictability from the common pre-event feature set.
+
+		The first effect is distributional. Method II produces a substantially higher continuation rate than Method I. This is not incidental. In Method II, the reference direction is fixed only after the short interval \([t,t+h_0]\) has been observed. The delay therefore acts as a confirmation step: continuation is measured relative to a direction that has already been partially realized. This mechanically induces a stronger marginal bias toward continuation. By contrast, Method I anchors the label directly to the original event direction, so the induced target remains much closer to balanced.
+
+		The second effect concerns learnability from a fixed predictor set. Although Method II exhibits stronger unconditional directional structure, the common pre-event feature set does not predict this target more effectively than the majority-class baseline. Its higher raw accuracy should therefore not be interpreted as evidence of strong conditional structure; rather, it is largely attributable to the continuation-dominated class distribution induced by the delay. Method I behaves differently. Its marginal label distribution is weaker and more symmetric, yet the logistic baseline outperforms the majority classifier and attains ROC-AUC above \(0.5\). This suggests that the event-direction target preserves at least modest conditional information that is detectable from \(X_t\).
+
+		These results imply that unconditional bias and conditional predictability should be distinguished carefully. A target may display strong statistical regularity at the level of
+		\[
+		\mathbb{P}(Y=1),
+		\]
+		without being especially predictable from the feature vector through
+		\[
+		\mathbb{P}(Y=1 \mid X_t).
+		\]
+		That distinction is central in the present setting. Method II is constructed in a way that strengthens the former, while the predictor set is deliberately held fixed so that the resulting lack of strong conditional discrimination from \(X_t\) remains visible. Method I, despite its weaker base-rate asymmetry, retains greater evidence of feature-based discrimination.
+
+		A natural interpretation is temporal attenuation. In Method I, the feature vector \(X_t\) and the label reference point coincide at the event time \(t\). In Method II, the effective reference point is shifted forward to the end of the interval \([t,t+h_0]\). Even though \(h_0=1\) in the present implementation, this small displacement appears sufficient to weaken the alignment between the feature snapshot and the eventual label. Put differently, the missing one-bar transition may contain information that is highly relevant for the delayed-reference target but unavailable to a model deliberately restricted to pre-event inputs. Under this interpretation, the deterioration in predictive performance under Method II is not merely a consequence of changed label semantics, but of reduced temporal alignment between predictors and target.
+
+		This interpretation also helps explain why the two methods may invite different feature sets. The current predictors are constructed entirely from information available at or before the event time and are therefore naturally suited to characterizing the event itself: its magnitude, local volatility context, recent return dynamics, volume conditions, and bar shape. Such quantities are well aligned with Method I and, in the present design, are intentionally not extended into the delay interval for Method II. Accordingly, the present results do not imply that Method II is intrinsically unpredictable, only that the paper deliberately withholds delay-interval information in order to isolate the statistical effect of temporal label anchoring itself.
+
+		The results should also be interpreted in light of the data limitations. The analysis uses approximately sixty calendar days of 2-minute SPY data from \texttt{yfinance}, so the sample is short and the conclusions are necessarily exploratory. The paper therefore does not claim a stable market effect or a deployable trading rule. Rather, the evidence supports a narrower conclusion: under a fixed event-detection architecture and a fixed pre-event feature set, small changes in target construction can materially alter both the base rate of the label and the apparent success of a predictive model.
+
+		From a modeling perspective, this is the main lesson. In short-horizon event-driven classification, the label is not a passive object extracted from the data, but an active design choice that helps determine what statistical structure is visible to the model. The present comparison shows that delaying the reference direction by even one bar can strengthen marginal continuation bias while attenuating conditional learnability when the predictor set is deliberately held fixed. A natural extension is therefore to revisit the hypothesis using more granular data, both to confirm its viability and to study whether a small delay can be incorporated into a simple trading strategy in an economically useful way. With a larger sample and higher-resolution intraday data, one could vary the delay used to define the reference direction and examine whether predictive performance or trading value is optimized at some intermediate labeling rule between immediate event-direction anchoring and short delayed anchoring. Access to lower time frames would be especially valuable, since finer temporal granularity would permit a more precise analysis of how feature relevance decays as the label reference point moves away from the event time. Accordingly, target construction should be treated as a first-order modeling decision rather than as a secondary implementation detail.
+
 	
 	\section{Conclusion}
-	
+
 	This paper studied continuation versus reversal after extreme short-term SPY moves under a common event-detection backbone and a common pre-event feature set, while varying only the target construction. The central finding is that the apparent predictability of the problem is materially sensitive to how the binary label is defined.
-	
-	When continuation and reversal are defined relative to the direction of the extreme event itself (Method I), the induced target is close to balanced and the logistic baseline exhibits modest but nontrivial predictive discrimination beyond the majority-class benchmark. When the reference direction is instead fixed only after a short post-event interval (Method II), the target becomes strongly skewed toward continuation, but this additional marginal structure does not translate into improved conditional prediction from pre-event features. In particular, the higher raw accuracy of Method II is dominated by class imbalance rather than by meaningful ranking or classification quality.
-	
-	The results therefore distinguish two different notions of structure. Method II exhibits stronger \emph{unconditional} directional structure, in the sense that the delayed reference construction induces a higher base-rate tendency toward continuation. Method I, by contrast, exhibits stronger \emph{conditional} structure, in the sense that the common pre-event feature set retains greater predictive relevance when the label is anchored directly to the event direction. This suggests that a short confirmation step may strengthen directional bias while simultaneously attenuating feature--label alignment.
-	
-	A related interpretation is temporal. In Method II, the effective reference point of the label is shifted forward relative to the feature snapshot \(X_t\). Even though this displacement is only one bar in the present implementation, the empirical results indicate that it is sufficient to weaken the extent to which the outcome can be predicted from pre-event information alone. Thus the paper identifies a bias--predictability tradeoff: waiting to confirm direction can alter the marginal distribution in a favorable directional sense, while reducing conditional learnability.
-	
-	The contribution is comparative rather than prescriptive. The paper does not claim a robust tradable signal. Rather, it shows that in short-horizon event-driven classification problems, target construction is not a secondary implementation detail: it changes the effective sample, the class balance, and the extent to which the label remains predictable from a fixed feature set. In the present setting, delayed reference construction primarily changes the base rate, whereas immediate event-direction reference preserves more of the conditional structure detectable from \(X_t\).
-	
-	A natural direction for future work is to study this tradeoff more systematically. With a larger sample and higher-resolution intraday data, one could investigate intermediate target constructions between immediate event-direction anchoring and delayed post-event anchoring, and test whether predictive performance is maximized at some more favorable balance between directional confirmation and temporal attenuation. More broadly, this type of analysis could serve as a scaffolding in the construction of a real short-horizon trading strategy: before optimizing execution or portfolio rules, one would first want to identify a target construction that preserves economically meaningful directional structure while remaining predictably linked to information available at decision time.
+
+	When continuation and reversal are defined relative to the direction of the extreme event itself (Method I), the induced target is close to balanced and the logistic baseline exhibits modest but nontrivial predictive discrimination beyond the majority-class benchmark. When the reference direction is instead fixed only after a short post-event interval (Method II), the target becomes strongly skewed toward continuation. Importantly, this additional marginal structure does not translate into improved conditional prediction from pre-event features. Rather, the higher raw accuracy of Method II is dominated by class imbalance rather than by meaningful ranking or classification quality.
+
+	The results therefore distinguish two different notions of structure. Method II exhibits stronger \emph{unconditional} directional structure, in the sense that the delayed reference construction induces a higher base-rate tendency toward continuation. Method I, by contrast, necessarily exhibits stronger \emph{conditional} structure under the controlled design, in the sense that the common pre-event feature set retains greater predictive relevance when the label is anchored directly to the event direction. This reflects the fact that the predictor set is deliberately not extended into the interval \([t,t+h_0]\), so that delaying the anchor of the label strengthens directional bias while simultaneously attenuating feature--label alignment.
+
+	A natural interpretation is temporal attenuation. In Method II, the effective reference point of the label is shifted forward relative to the feature snapshot \(X_t\). Even though this displacement is only one bar in the present implementation, the empirical results indicate that it is sufficient to weaken the extent to which the outcome can be predicted from pre-event information alone.
+
+	The contribution is comparative rather than prescriptive. The paper does not claim a robust tradable signal. Rather, it shows that in short-horizon event-driven classification problems, target construction is not a secondary implementation detail: it changes the effective sample, the class balance, and the extent to which the label remains predictable from a fixed feature set. More specifically, the comparison demonstrates how potent a slightly delayed reference construction can be in raising raw accuracy by inducing stronger marginal directional structure, even when little conditional structure remains detectable from \(X_t\).
+
+	A natural direction for future work is to replicate and stress-test the effect that temporal anchoring of the labeling rule has on the class distribution and on headline predictive metrics. The first important deliverable would therefore be a cleaner event-driven research pipeline built on higher-quality historical data, together with a systematic comparison of immediate event-time anchoring and short delayed anchoring under the same event-detection rule and the same pre-event feature snapshot.
 	
 	\appendix
 	
@@ -1352,6 +1352,6 @@
 	\[
 	\mathbb{P}(Y=1)
 	\]
-	is far from \(0.5\). The majority baseline and ROC-AUC are therefore used to distinguish unconditional class skew from genuine conditional predictive discrimination.
+	is far from \(0.5\). The majority baseline and ROC-AUC are therefore used to distinguish delay-induced marginal class skew from genuine conditional predictive discrimination extracted from the fixed pre-event feature set.
 	
 \end{document}
